@@ -1,6 +1,6 @@
-import { describe, test } from "vitest";
+import { describe, test, vi } from "vitest";
 import { expect } from "chai";
-import { diceHandValueRefactored } from "../src/untestable2.mjs";
+import { diceHandValueRefactored, diceRoll } from "../src/untestable2.mjs";
 
 describe("Untestable 2: a dice game", () => {
   test("returns correct points for all dice combinations", () => {
@@ -13,5 +13,10 @@ describe("Untestable 2: a dice game", () => {
         }
       }
     }
+  });
+
+  test("returns correct value for dice roll", () => {
+    vi.spyOn(global.Math, "random").mockReturnValue(0.123456789);
+    expect(diceRoll()).to.equal(1);
   });
 });
