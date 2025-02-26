@@ -8,10 +8,13 @@ import { parsePeopleCsv } from "../src/untestable3.mjs";
 // Yor,Forger,27,Female
 
 describe("Untestable 3: CSV file parsing", () => {
-  test("todo", async () => {
-    // TODO: write proper tests
-    try {
-      expect(await parsePeopleCsv("people.csv")).to.deep.equal([]);
-    } catch (e) {}
+  test("parses data correctly", async () => {
+    const expected = [
+      { firstName: "Loid", lastName: "Forger", gender: "m" },
+      { firstName: "Anya", lastName: "Forger", age: 6, gender: "f" },
+      { firstName: "Yor", lastName: "Forger", age: 27, gender: "f" },
+    ];
+
+    expect(await parsePeopleCsv("./test/example.csv")).to.deep.equal(expected);
   });
 });

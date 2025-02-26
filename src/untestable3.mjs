@@ -1,6 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { parse } from "csv-parse/sync";
 
+// Testing functions that read from the file system can be tricky
+// because the file system is a global variable
 export async function parsePeopleCsv(filePath) {
   const csvData = await readFile(filePath, { encoding: "utf8" });
   const records = parse(csvData, {
