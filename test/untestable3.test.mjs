@@ -1,20 +1,24 @@
 import { describe, test } from "vitest";
 import { expect } from "chai";
-import { parsePeopleCsv } from "../src/untestable3.mjs";
-
-// example input:
-// Loid,Forger,,Male
-// Anya,Forger,6,Female
-// Yor,Forger,27,Female
+import { parsePeopleCsvRefactored, readUtf8File } from "../src/untestable3.mjs";
 
 describe("Untestable 3: CSV file parsing", () => {
-  test("parses data correctly", async () => {
+  test("reads file", async () => {
+    expect(await readUtf8File("./test/example.csv")).to.equal("testing\n");
+  });
+
+  test("parses data correctly", () => {
+    const input = `Loid,Forger,,Male
+                  Anya,Forger,6,Female
+                  Yor,Forger,27,Female
+                  `;
+
     const expected = [
       { firstName: "Loid", lastName: "Forger", gender: "m" },
       { firstName: "Anya", lastName: "Forger", age: 6, gender: "f" },
       { firstName: "Yor", lastName: "Forger", age: 27, gender: "f" },
     ];
 
-    expect(await parsePeopleCsv("./test/example.csv")).to.deep.equal(expected);
+    expect(parsePeopleCsvRefactored(input)).to.deep.equal(expected);
   });
 });

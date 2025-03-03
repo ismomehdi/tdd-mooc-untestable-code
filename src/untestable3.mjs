@@ -21,3 +21,26 @@ export async function parsePeopleCsv(filePath) {
     return person;
   });
 }
+
+// Decoupling the file reading from the parsing makes the code easier to test
+export function parsePeopleCsvRefactored(csvData) {
+  const records = parse(csvData, {
+    skip_empty_lines: true,
+    trim: true,
+  });
+  return records.map(([firstName, lastName, age, gender]) => {
+    const person = {
+      firstName,
+      lastName,
+      gender: gender.charAt(0).toLowerCase(),
+    };
+    if (age !== "") {
+      person.age = parseInt(age);
+    }
+    return person;
+  });
+}
+
+export async function readUtf8File(path) {
+  return await readFile(path, { encoding: "utf8" });
+}
