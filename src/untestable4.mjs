@@ -1,6 +1,8 @@
 import argon2 from "@node-rs/argon2";
 import pg from "pg";
 
+// "Singleton is an anti-pattern."
+// also, decoupling the db connection makes testing easier
 export class PostgresUserDao {
   static instance;
 
@@ -32,7 +34,7 @@ export class PostgresUserDao {
       `select user_id, password_hash
        from users
        where user_id = $1`,
-      [userId]
+      [userId],
     );
     return rows.map(this.#rowToUser)[0] || null;
   }
@@ -43,11 +45,52 @@ export class PostgresUserDao {
        values ($1, $2)
        on conflict (user_id) do update
            set password_hash = excluded.password_hash`,
-      [user.userId, user.passwordHash]
+      [user.userId, user.passwordHash],
     );
   }
 }
 
+export const connectToDb = () =>
+  new pg.Pool({
+    user: process.env.PGUSER,
+    host: process.env.PGHOST,
+    database: process.env.PGDATABASE,
+    password: process.env.PGPASSWORD,
+    port: process.env.PGPORT,
+  });
+
+export class PostgresUserDaoRefactored {
+  constructor(db) {
+    this.db = db;
+  }
+
+  #rowToUser(row) {
+    return { userId: row.user_id, passwordHash: row.password_hash };
+  }
+
+  async getById(userId) {
+    const { rows } = await this.db.query(
+      `select user_id, password_hash
+       from users
+       where user_id = $1`,
+      [userId],
+    );
+    return rows.map(this.#rowToUser)[0] || null;
+  }
+
+  async save(user) {
+    await this.db.query(
+      `insert into users (user_id, password_hash)
+       values ($1, $2)
+       on conflict (user_id) do update
+           set password_hash = excluded.password_hash`,
+      [user.userId, user.passwordHash],
+    );
+  }
+}
+
+// The class is hard to test as it's tightly coupled to the database,
+// PostgresUserDao, and the hashing function.
 export class PasswordService {
   users = PostgresUserDao.getInstance();
 
@@ -57,6 +100,32 @@ export class PasswordService {
       throw new Error("wrong old password");
     }
     user.passwordHash = argon2.hashSync(newPassword);
+    await this.users.save(user);
+  }
+}
+
+export class PasswordHasher {
+  hashPassword(password) {
+    return argon2.hashSync(password);
+  }
+
+  verifyPassword(hash, password) {
+    return argon2.verifySync(hash, password);
+  }
+}
+
+export class PasswordServiceRefactored {
+  constructor(users, hasher) {
+    this.users = users;
+    this.hasher = hasher;
+  }
+
+  async changePassword(userId, oldPassword, newPassword) {
+    const user = await this.users.getById(userId);
+    if (!this.hasher.verifyPassword(user.passwordHash, oldPassword)) {
+      throw new Error("wrong old password");
+    }
+    user.passwordHash = this.hasher.hashPassword(newPassword);
     await this.users.save(user);
   }
 }
